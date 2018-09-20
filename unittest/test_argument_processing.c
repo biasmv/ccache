@@ -494,4 +494,58 @@ TEST(debug_flag_order_with_known_option_last)
 	args_free(orig);
 }
 
+TEST(add_w_no_error_to_cpp_args_in_cpp2_mode_when_w_error_present)
+{
+	struct args *orig = args_init_from_string("cc -Werror foo.c -c");
+	struct args *exp_cpp = args_init_from_string("cc -Werror -Wno-error");
+	struct args *exp_cc = args_init_from_string("cc -Werror -c");
+	struct args *act_cpp = NULL;
+	struct args *act_cc = NULL;
+
+	conf->run_second_cpp = true;
+
+	create_file("foo.c", "");
+	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
+	CHECK_ARGS_EQ_FREE12(exp_cpp, act_cpp);
+	CHECK_ARGS_EQ_FREE12(exp_cc, act_cc);
+
+	args_free(orig);
+}
+
+TEST(do_not_add_w_no_error_when_cpp2_mode_is_off)
+{
+	struct args *orig = args_init_from_string("cc -Werror foo.c -c");
+	struct args *exp_cpp = args_init_from_string("cc -Werror");
+	struct args *exp_cc = args_init_from_string("cc -Werror -c");
+	struct args *act_cpp = NULL;
+	struct args *act_cc = NULL;
+
+	conf->run_second_cpp = false;
+
+	create_file("foo.c", "");
+	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
+	CHECK_ARGS_EQ_FREE12(exp_cpp, act_cpp);
+	CHECK_ARGS_EQ_FREE12(exp_cc, act_cc);
+
+	args_free(orig);
+}
+
+TEST(do_not_add_w_no_error_to_cpp_args_when_w_error_not_present)
+{
+	struct args *orig = args_init_from_string("cc foo.c -c");
+	struct args *exp_cpp = args_init_from_string("cc");
+	struct args *exp_cc = args_init_from_string("cc -c");
+	struct args *act_cpp = NULL;
+	struct args *act_cc = NULL;
+
+	conf->run_second_cpp = true;
+
+	create_file("foo.c", "");
+	CHECK(cc_process_args(orig, &act_cpp, &act_cc));
+	CHECK_ARGS_EQ_FREE12(exp_cpp, act_cpp);
+	CHECK_ARGS_EQ_FREE12(exp_cc, act_cc);
+
+	args_free(orig);
+}
+
 TEST_SUITE_END

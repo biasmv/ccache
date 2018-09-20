@@ -2203,6 +2203,7 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 
 	bool found_directives_only = false;
 	bool found_rewrite_includes = false;
+	bool found_w_error = false;
 
 	int argc = expanded_args->argc;
 	char **argv = expanded_args->argv;
@@ -2752,6 +2753,11 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 			i++;
 			continue;
 		}
+		if (str_eq(argv[i], "-Werror")) {
+			found_w_error = true;
+			args_add(stripped_args, argv[i]);
+			continue;
+		}
 
 		// Same as above but options with concatenated argument beginning with a
 		// slash.
@@ -3111,6 +3117,10 @@ cc_process_args(struct args *args, struct args **preprocessor_args,
 
 	*preprocessor_args = args_copy(stripped_args);
 	args_extend(*preprocessor_args, cpp_args);
+	if (found_w_error && conf->run_second_cpp) {
+		// Suppress warnings in preprocessor step.
+		args_add(*preprocessor_args, "-Wno-error");
+	}
 
 out:
 	args_free(expanded_args);
